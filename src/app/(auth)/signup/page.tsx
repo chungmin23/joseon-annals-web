@@ -47,7 +47,14 @@ export default function SignupPage() {
                 nickname: data.nickname,
             });
 
-            const { user, accessToken, refreshToken } = response;
+            const { accessToken, refreshToken, ...rest } = response;
+
+            const user = {
+                userId: rest.userId,
+                email: rest.email,
+                nickname: rest.nickname,
+            };
+
             setAuth(user, accessToken, refreshToken);
 
             // Set cookie for middleware
