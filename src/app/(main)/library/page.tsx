@@ -6,7 +6,6 @@ import { getLibraryContents, deleteFromLibrary } from "@/lib/api/contents";
 import { ContentCard } from "@/components/content/content-card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Bookmark, Play, BookOpen, X } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
 
 export default function LibraryPage() {
@@ -27,7 +26,7 @@ export default function LibraryPage() {
 
     const filteredContents = contents.filter(item => {
         if (activeTab === "ALL") return true;
-        return item.type === activeTab;
+        return item.contentType === activeTab;
     });
 
     return (
@@ -57,7 +56,7 @@ export default function LibraryPage() {
                             <div key={item.contentId} className="relative">
                                 <ContentCard content={item} isSaved={true} />
                                 <button
-                                    onClick={() => deleteMutation.mutate(item.contentId)}
+                                    onClick={() => deleteMutation.mutate(item.contentId.toString())}
                                     disabled={deleteMutation.isPending}
                                     className="absolute top-2 right-2 z-10 p-1 rounded-full bg-white/90 border border-[var(--border)] shadow-sm text-[var(--text-muted)] hover:text-[var(--accent-red)] transition-colors disabled:opacity-50"
                                     title="서재에서 제거"

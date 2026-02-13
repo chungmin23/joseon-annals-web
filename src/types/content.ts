@@ -1,23 +1,11 @@
 export type ContentType = 'VIDEO' | 'BOOK';
 
 export interface ContentItem {
-    contentId: string; // or number
-    type: ContentType;
+    contentId: number;
+    contentType: ContentType;
     title: string;
-    description: string; // Channel name or Author/Publisher
+    description: string;
     thumbnailUrl: string;
     linkUrl: string;
     isSaved?: boolean;
-
-    // Specific fields
-    videoDuration?: string; // "12:30"
-    viewCount?: string; // "12만회"
-
-    // Book specific (if any extra)
-    author?: string; // Can map to description
-    publisher?: string;
-}
-
-export interface RecommendResponse {
-    contents: ContentItem[];
 }

@@ -7,12 +7,12 @@ import { Button } from "@/components/ui/button";
 
 interface ContentCardProps {
     content: ContentItem;
-    onSave?: (id: string) => void;
+    onSave?: (id: number) => void;
     isSaved?: boolean;
 }
 
 export function ContentCard({ content, onSave, isSaved }: ContentCardProps) {
-    const isVideo = content.type === 'VIDEO';
+    const isVideo = content.contentType === 'VIDEO';
 
     const handleLinkClick = (e: React.MouseEvent) => {
         // Open in new tab logic is handled by Link target="_blank"
@@ -56,11 +56,6 @@ export function ContentCard({ content, onSave, isSaved }: ContentCardProps) {
                     </div>
                 )}
 
-                {isVideo && content.videoDuration && (
-                    <div className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded bg-black/70 text-white text-[10px] font-medium backdrop-blur-sm">
-                        {content.videoDuration}
-                    </div>
-                )}
             </div>
 
             {/* Info */}

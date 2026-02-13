@@ -13,9 +13,9 @@ interface ContentBottomSheetProps {
 
 export function ContentBottomSheet({ isOpen, onClose, recommendations }: ContentBottomSheetProps) {
 
-    const handleSave = async (id: string) => {
+    const handleSave = async (id: number) => {
         try {
-            await saveToLibrary(id);
+            await saveToLibrary(id.toString());
             alert("서재에 담았습니다.");
         } catch (e) {
             console.error(e);
