@@ -4,7 +4,7 @@ import { useState } from "react";
 import { PageHeader } from "@/components/layout/page-header";
 import { PersonaCard } from "@/components/persona/persona-card";
 import { Persona } from "@/types/persona";
-import { getPersonas } from "@/lib/api/personas";
+import { getPersonas, getDailyPersonas } from "@/lib/api/personas";
 import { useQuery } from "@tanstack/react-query";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -67,6 +67,13 @@ export default function PersonasPage() {
         retry: false
     });
 
+    const { data: dailyPersonas = [], isLoading: isDailyLoading } = useQuery({
+        queryKey: ['personas', 'daily'],
+        queryFn: getDailyPersonas,
+        retry: false,
+        staleTime: 1000 * 60 * 5,
+    });
+
     const usingDummy = !requestPersonas || requestPersonas.length === 0;
     const personas = usingDummy ? DUMMY_PERSONAS : requestPersonas;
 
@@ -83,8 +90,6 @@ export default function PersonasPage() {
         return true;
     });
 
-    // Mock recommendation (e.g., first 3 items or specific IDs)
-    const recommendedPersonas = personas.slice(0, 2);
 
     return (
         <div className="pb-20">
@@ -115,16 +120,22 @@ export default function PersonasPage() {
             {currentTab === "ALL" && !search && (
                 <div className="mb-8">
                     <div className="flex items-center gap-2 mb-4">
-                        <h2 className="text-lg font-bold font-serif text-[var(--text-primary)]">오늘의 추천 위인</h2>
+                        <h2 className="text-lg font-bold font-serif text-[var(--text-primary)]">오늘의 인기 위인</h2>
                         <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-red)]" />
                     </div>
 
                     <div className="flex gap-4 overflow-x-auto pb-4 -mx-5 px-5 scrollbar-hide">
-                        {recommendedPersonas.map(persona => (
-                            <div key={persona.personaId} className="w-[160px] flex-shrink-0">
-                                <PersonaCard persona={persona} />
-                            </div>
-                        ))}
+                        {isDailyLoading ? (
+                            Array.from({ length: 2 }).map((_, i) => (
+                                <div key={i} className="w-[160px] flex-shrink-0 aspect-[3/4] rounded-[20px] bg-[var(--border)]/30 animate-pulse" />
+                            ))
+                        ) : (
+                            dailyPersonas.map(persona => (
+                                <div key={persona.personaId} className="w-[160px] flex-shrink-0">
+                                    <PersonaCard persona={persona} />
+                                </div>
+                            ))
+                        )}
                     </div>
                 </div>
             )}

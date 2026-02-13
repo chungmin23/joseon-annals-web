@@ -9,3 +9,7 @@ export const getPersonas = (era?: string) => {
 export const getPersona = (id: string) => {
     return client<Persona>(`/api/v1/personas/${id}`);
 };
+
+export const getDailyPersonas = () => {
+    return client<Persona[]>('/api/v1/personas/daily');
+};

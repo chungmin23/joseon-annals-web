@@ -1,6 +1,6 @@
-import { useRef } from "react";
-import { X } from "lucide-react";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from "@/components/ui/sheet";
+import { useState } from "react";
+import { X, BookMarked } from "lucide-react";
+import { Sheet, SheetContent, SheetTitle, SheetClose } from "@/components/ui/sheet";
 import { ContentCard } from "./content-card";
 import { ContentItem } from "@/types/content";
 import { saveToLibrary } from "@/lib/api/contents";
@@ -12,11 +12,15 @@ interface ContentBottomSheetProps {
 }
 
 export function ContentBottomSheet({ isOpen, onClose, recommendations }: ContentBottomSheetProps) {
+    const [savedIds, setSavedIds] = useState<Set<number>>(new Set());
+    const [toastVisible, setToastVisible] = useState(false);
 
     const handleSave = async (id: number) => {
         try {
             await saveToLibrary(id.toString());
-            alert("서재에 담았습니다.");
+            setSavedIds(prev => new Set(prev).add(id));
+            setToastVisible(true);
+            setTimeout(() => setToastVisible(false), 2500);
         } catch (e) {
             console.error(e);
         }
@@ -34,9 +38,9 @@ export function ContentBottomSheet({ isOpen, onClose, recommendations }: Content
                             <span className="text-xs font-bold text-[var(--accent-red)] tracking-widest font-sans uppercase">
                                 CONTEXT ANALYSIS
                             </span>
-                            <h2 className="text-2xl font-bold font-serif text-[var(--text-primary)]">
+                            <SheetTitle className="text-2xl font-bold font-serif text-[var(--text-primary)]">
                                 관련 콘텐츠 추천
-                            </h2>
+                            </SheetTitle>
                             <p className="text-sm text-[var(--text-secondary)]">
                                 대화 맥락에 맞는 {Array.isArray(recommendations) ? recommendations.length : 0}가지 항목이 발견되었습니다.
                             </p>
@@ -53,11 +57,23 @@ export function ContentBottomSheet({ isOpen, onClose, recommendations }: Content
                                     key={item.contentId}
                                     content={item}
                                     onSave={handleSave}
-                                    isSaved={item.isSaved}
+                                    isSaved={item.isSaved || savedIds.has(item.contentId)}
                                 />
                             ))}
                         </div>
                     </div>
+                </div>
+
+                {/* 저장 완료 토스트 */}
+                <div className={`
+                    absolute bottom-8 left-1/2 -translate-x-1/2
+                    flex items-center gap-2 px-4 py-2.5
+                    bg-[#2a2a2a] text-white text-sm font-medium rounded-full shadow-lg
+                    transition-all duration-300
+                    ${toastVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}
+                `}>
+                    <BookMarked className="w-4 h-4 text-[var(--accent-gold)]" />
+                    서재에 담았습니다
                 </div>
             </SheetContent>
         </Sheet>

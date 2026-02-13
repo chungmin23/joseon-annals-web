@@ -40,13 +40,17 @@
   --sidebar-ring: oklch(0.708 0 0);
 
   /* Custom Design Tokens (Joseon Sillok Talk) */
-  --bg-primary: #F5F0E8; /* Hanji Background */
+  --bg-primary: #F5F0E8;
+  /* Hanji Background */
   --bg-secondary: #FFFFFF;
-  --text-primary: #1A1A1A; /* Ink Black */
+  --text-primary: #1A1A1A;
+  /* Ink Black */
   --text-secondary: #6B6B6B;
   --text-muted: #9B9B9B;
-  --accent-red: #C73535; /* Royal Seal Red */
-  --accent-green: #2EAD4B; /* Naver Green */
+  --accent-red: #C73535;
+  /* Royal Seal Red */
+  --accent-green: #2EAD4B;
+  /* Naver Green */
   --accent-gold: #B8860B;
   --accent-emerald: #0D7C4A;
   --custom-border: #E0D8CC;
@@ -156,7 +160,21 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
 }
