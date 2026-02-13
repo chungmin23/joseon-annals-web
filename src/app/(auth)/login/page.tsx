@@ -60,10 +60,11 @@ export default function LoginPage() {
             router.push("/personas");
 
         } catch (err: any) {
-            if (err.message === "INVALID_CREDENTIALS") {
-                setError("성명 또는 암호가 올바르지 않습니다.");
+            const msg = err?.message || "";
+            if (!msg || msg === "Failed to fetch" || msg.startsWith("Unexpected")) {
+                setError("서버에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.");
             } else {
-                setError(err.message || "로그인에 실패하였습니다.");
+                setError(msg);
             }
         }
     }
