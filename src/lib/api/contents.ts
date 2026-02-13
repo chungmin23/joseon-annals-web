@@ -21,3 +21,7 @@ export const deleteFromLibrary = (contentId: string) => {
         method: "DELETE"
     });
 };
+
+export const getRoomRecommendations = (roomId: string) => {
+    return client<ContentItem[]>(`/api/v1/contents/rooms/${roomId}/recommendations`);
+};

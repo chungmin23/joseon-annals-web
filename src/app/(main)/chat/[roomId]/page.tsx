@@ -3,13 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { ArrowLeft, MoreHorizontal, Sparkles } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { ArrowLeft } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { Message } from "@/types/chat";
+import { ContentItem } from "@/types/content";
 import { getMessages, sendMessage, getChatRoom } from "@/lib/api/chat";
-import { getRecommendedContents } from "@/lib/api/contents";
-import { ChatBubble } from "@/components/chat/chat-bubble";
+import { getRoomRecommendations } from "@/lib/api/contents";
+import { ChatBubble, TypingIndicator } from "@/components/chat/chat-bubble";
 import { ChatInput } from "@/components/chat/chat-input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ContentBottomSheet } from "@/components/content/content-bottom-sheet";
@@ -20,9 +21,21 @@ export default function ChatRoomPage() {
     const roomId = params.roomId as string;
     const scrollRef = useRef<HTMLDivElement>(null);
     const shouldScrollRef = useRef(false);
+    const queryClient = useQueryClient();
 
     const [messages, setMessages] = useState<Message[]>([]);
-    const [isSheetOpen, setIsSheetOpen] = useState(false); // Controls bottom sheet visibility
+    const [isSheetOpen, setIsSheetOpen] = useState(false);
+    const [recommendations, setRecommendations] = useState<ContentItem[]>([]);
+    const [isWaiting, setIsWaiting] = useState(false);
+    // AI 답변 후 추천 로딩 중 여부 (로딩 점 표시용)
+    const [isLoadingRecs, setIsLoadingRecs] = useState(false);
+
+    // 이미 타이핑 애니메이션을 완료한 메시지 ID 추적
+    const typedMessageIds = useRef<Set<string>>(new Set());
+    // 이전 ASSISTANT 메시지 수 추적 (-1: 미초기화)
+    const prevAssistantCountRef = useRef(-1);
+    // 추천 폴링 종료 시각 (메시지 전송 후 15초간만 폴링)
+    const recsPollUntilRef = useRef<number>(0);
 
     // Fetch specific room to get persona info (flat response from backend)
     const { data: currentRoom } = useQuery({
@@ -31,30 +44,58 @@ export default function ChatRoomPage() {
         staleTime: 60 * 1000,
     });
 
-    // Fetch recommended contents for the sparkle button
-    const { data: recommendations = [] } = useQuery({
-        queryKey: ['recommendations', currentRoom?.personaId],
-        queryFn: () => getRecommendedContents(currentRoom!.personaId),
-        enabled: !!currentRoom?.personaId,
+    const hasAssistantMessage = messages.some(m => m.role.toUpperCase() === 'ASSISTANT');
+
+    // 메시지 전송 후 15초간만 추천 폴링
+    const { data: roomRecommendations } = useQuery({
+        queryKey: ['recommendations', roomId],
+        queryFn: () => getRoomRecommendations(roomId),
+        refetchInterval: () => Date.now() < recsPollUntilRef.current ? 3000 : false,
+        enabled: hasAssistantMessage,
     });
 
-    const safeRecommendations = Array.isArray(recommendations) ? recommendations : [];
+    useEffect(() => {
+        if (roomRecommendations && roomRecommendations.length > 0) {
+            setRecommendations(roomRecommendations);
+            setIsLoadingRecs(false);
+        }
+    }, [roomRecommendations]);
 
-    // Fetch messages with polling
+    const safeRecommendations = recommendations;
+
+    // AI 응답 대기 중에만 2초마다 폴링, 평상시엔 자동 폴링 없음
     const { data: fetchedMessages, isLoading } = useQuery({
         queryKey: ['messages', roomId],
         queryFn: () => getMessages(roomId),
-        refetchInterval: 5000,
+        refetchInterval: isWaiting ? 2000 : false,
     });
 
     useEffect(() => {
         if (fetchedMessages) {
             const sorted = [...fetchedMessages].sort((a, b) => a.timestamp - b.timestamp);
             setMessages(sorted);
+
+            const assistantMsgs = sorted.filter(m => m.role.toUpperCase() === 'ASSISTANT');
+            const assistantCount = assistantMsgs.length;
+
+            if (prevAssistantCountRef.current === -1) {
+                // 최초 로드: 기존 메시지는 애니메이션 없이 표시
+                assistantMsgs.forEach(m => typedMessageIds.current.add(m.messageId));
+                prevAssistantCountRef.current = assistantCount;
+            } else if (assistantCount > prevAssistantCountRef.current) {
+                // 새 AI 답변 도착 → 타이핑 인디케이터 제거, 추천 로딩 시작
+                setIsWaiting(false);
+                setIsLoadingRecs(true);
+                prevAssistantCountRef.current = assistantCount;
+                // 추천 콘텐츠 즉시 갱신 (비동기 추천이 아직 안 왔을 수 있으므로)
+                queryClient.invalidateQueries({ queryKey: ['recommendations', roomId] });
+                // 15초 후에도 추천이 없으면 로딩 상태 해제
+                setTimeout(() => setIsLoadingRecs(false), 15000);
+            }
         }
     }, [fetchedMessages]);
 
-    // Only scroll to bottom when user sends a message
+    // 스크롤: 메시지 변경 시
     useEffect(() => {
         if (shouldScrollRef.current && scrollRef.current) {
             scrollRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -62,8 +103,14 @@ export default function ChatRoomPage() {
         }
     }, [messages]);
 
+    // 스크롤: 타이핑 인디케이터 표시 시
+    useEffect(() => {
+        if (isWaiting && scrollRef.current) {
+            scrollRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+    }, [isWaiting]);
+
     const handleSend = async (text: string) => {
-        // Optimistic update
         const tempId = Date.now().toString();
         const tempMessage: Message = {
             messageId: tempId,
@@ -73,18 +120,18 @@ export default function ChatRoomPage() {
         };
         setMessages(prev => [...prev, tempMessage]);
         shouldScrollRef.current = true;
+        setIsWaiting(true);
+        recsPollUntilRef.current = Date.now() + 15000; // 15초간 추천 폴링
 
         try {
             await sendMessage(roomId, text);
-            // Polling will pick up the AI response automatically
         } catch (e) {
             console.error("Failed to send", e);
-            // Revert optimistic update on failure
             setMessages(prev => prev.filter(m => m.messageId !== tempId));
+            setIsWaiting(false);
         }
     };
 
-    // Helper to render date separator from timestamp
     const renderDateSeparator = (timestamp: number) => {
         const date = new Date(timestamp);
         if (isNaN(date.getTime())) return null;
@@ -164,7 +211,7 @@ export default function ChatRoomPage() {
                         </div>
                     ) : (
                         <>
-                            {/* Initial greeting — always visible regardless of message count */}
+                            {/* Initial greeting */}
                             {currentRoom?.greeting && (
                                 <>
                                     {renderDateSeparator(currentRoom.createdAt ? new Date(currentRoom.createdAt).getTime() : Date.now())}
@@ -182,25 +229,38 @@ export default function ChatRoomPage() {
                                 </>
                             )}
 
-                            {/* Conversation messages — skip first ASSISTANT msg (stored greeting) to avoid duplication */}
+                            {/* Conversation messages */}
                             {messages
                                 .filter((msg, i) => !(i === 0 && msg.role.toUpperCase() === 'ASSISTANT'))
                                 .map((msg, index, arr) => {
                                     const showDateSeparator = index > 0 &&
                                         new Date(msg.timestamp).getDate() !== new Date(arr[index - 1].timestamp).getDate();
+                                    const lastAssistantIndex = arr.reduce((acc, m, idx) =>
+                                        m.role.toUpperCase() === 'ASSISTANT' ? idx : acc, -1);
+                                    const isNewMsg = msg.role.toUpperCase() === 'ASSISTANT'
+                                        && index === lastAssistantIndex
+                                        && !typedMessageIds.current.has(msg.messageId);
                                     return (
                                         <div key={msg.messageId}>
                                             {showDateSeparator && renderDateSeparator(msg.timestamp)}
                                             <ChatBubble
                                                 message={msg}
                                                 profileImageUrl={currentRoom?.personaImage}
-                                                showRelated={safeRecommendations.length > 0}
+                                                showRelated={safeRecommendations.length > 0 && msg.role.toUpperCase() === 'ASSISTANT' && index === lastAssistantIndex}
+                                                showLoadingRecs={isLoadingRecs && safeRecommendations.length === 0 && msg.role.toUpperCase() === 'ASSISTANT' && index === lastAssistantIndex}
                                                 onRelatedClick={() => setIsSheetOpen(true)}
+                                                isNew={isNewMsg}
+                                                onTypingComplete={() => typedMessageIds.current.add(msg.messageId)}
                                             />
                                         </div>
                                     );
                                 })
                             }
+
+                            {/* 타이핑 인디케이터 */}
+                            {isWaiting && (
+                                <TypingIndicator profileImageUrl={currentRoom?.personaImage} />
+                            )}
                         </>
                     )}
                     <div ref={scrollRef} />
