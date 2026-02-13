@@ -1,7 +1,8 @@
 import { useAuthStore } from "@/lib/store/auth-store";
 import { ApiResponse } from "@/types/api";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+// Next.js rewrites가 /api/* → 백엔드로 프록시하므로 BASE_URL은 비워둠
+const BASE_URL = "";
 
 interface FetchOptions extends RequestInit {
     headers?: Record<string, string>;
