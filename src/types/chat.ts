@@ -1,4 +1,3 @@
-import { Persona } from "./persona";
 
 export type RoleType = 'USER' | 'ASSISTANT' | 'SYSTEM';
 

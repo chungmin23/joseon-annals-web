@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import { Play, BookOpen, Check } from "lucide-react";
@@ -13,10 +15,6 @@ interface ContentCardProps {
 
 export function ContentCard({ content, onSave, isSaved }: ContentCardProps) {
     const isVideo = content.contentType === 'VIDEO';
-
-    const handleLinkClick = (e: React.MouseEvent) => {
-        // Open in new tab logic is handled by Link target="_blank"
-    };
 
     return (
         <div className="flex flex-col w-full group">
@@ -35,7 +33,7 @@ export function ContentCard({ content, onSave, isSaved }: ContentCardProps) {
                     </div>
                 )}
 
-                {/* Badge & Overlays */}
+                {/* Badge */}
                 <div className="absolute top-2 left-2 z-10">
                     {isVideo ? (
                         <span className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-[var(--accent-red)] text-white shadow-sm">
@@ -55,7 +53,6 @@ export function ContentCard({ content, onSave, isSaved }: ContentCardProps) {
                         </div>
                     </div>
                 )}
-
             </div>
 
             {/* Info */}
@@ -64,7 +61,6 @@ export function ContentCard({ content, onSave, isSaved }: ContentCardProps) {
 
             {/* Actions */}
             <div className="mt-auto space-y-2">
-                {/* External Link CTA */}
                 <Link href={content.linkUrl} target="_blank" rel="noopener noreferrer" className="w-full">
                     <Button
                         variant="default"
@@ -80,7 +76,6 @@ export function ContentCard({ content, onSave, isSaved }: ContentCardProps) {
                     </Button>
                 </Link>
 
-                {/* Save CTA */}
                 <Button
                     variant="outline"
                     size="sm"

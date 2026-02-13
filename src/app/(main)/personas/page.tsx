@@ -63,13 +63,13 @@ export default function PersonasPage() {
 
     const { data: requestPersonas, isLoading } = useQuery({
         queryKey: ['personas', currentTab],
-        queryFn: () => getPersonas(currentTab !== "ALL" ? currentTab : undefined),
+        queryFn: () => getPersonas(currentTab !== "ALL" ? currentTab : undefined).catch(() => [] as Persona[]),
         retry: false
     });
 
     const { data: dailyPersonas = [], isLoading: isDailyLoading } = useQuery({
         queryKey: ['personas', 'daily'],
-        queryFn: getDailyPersonas,
+        queryFn: () => getDailyPersonas().catch(() => [] as Persona[]),
         retry: false,
         staleTime: 1000 * 60 * 5,
     });
