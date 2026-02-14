@@ -47,3 +47,16 @@ export const changePassword = (currentPassword: string, newPassword: string) => 
         body: JSON.stringify({ currentPassword, newPassword }),
     });
 };
+
+export const googleLogin = async (code: string, redirectUri: string): Promise<AuthResponse> => {
+    const response = await fetch(`/api/v1/auth/google`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, redirectUri }),
+    });
+    const json = await response.json();
+    if (json.code !== "SUCCESS") {
+        throw new Error(json.message || "구글 로그인에 실패했습니다.");
+    }
+    return json.data as AuthResponse;
+};
