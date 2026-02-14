@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { PageHeader } from "@/components/layout/page-header";
 import { PersonaCard } from "@/components/persona/persona-card";
 import { Persona } from "@/types/persona";
 import { getPersonas, getDailyPersonas } from "@/lib/api/personas";
+import { getChatRooms } from "@/lib/api/chat";
 import { useQuery } from "@tanstack/react-query";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -74,6 +76,18 @@ export default function PersonasPage() {
         staleTime: 1000 * 60 * 5,
     });
 
+    const { data: chatRooms = [], isLoading: isRecentLoading } = useQuery({
+        queryKey: ['chat', 'rooms', 'recent'],
+        queryFn: () => getChatRooms().catch(() => []),
+        retry: false,
+        staleTime: 1000 * 60,
+    });
+
+    const recentChatPeople = [...chatRooms]
+        .sort((a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime())
+        .filter((room, index, array) => index === array.findIndex((candidate) => candidate.personaId === room.personaId))
+        .slice(0, 5);
+
     const usingDummy = !requestPersonas || requestPersonas.length === 0;
     const personas = usingDummy ? DUMMY_PERSONAS : requestPersonas;
 
@@ -115,6 +129,44 @@ export default function PersonasPage() {
                     </button>
                 ))}
             </div>
+
+            {/* Recent Chat Section (Only show on ALL tab and no search) */}
+            {currentTab === "ALL" && !search && (isRecentLoading || recentChatPeople.length > 0) && (
+                <div className="mb-8">
+                    <div className="flex items-center gap-2 mb-4">
+                        <h2 className="text-lg font-bold font-serif text-[var(--text-primary)]">최근 대화한 인물</h2>
+                    </div>
+
+                    <div className="flex gap-3 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide">
+                        {isRecentLoading ? (
+                            Array.from({ length: 5 }).map((_, i) => (
+                                <div key={i} className="w-[108px] flex-shrink-0">
+                                    <div className="aspect-square rounded-2xl bg-[var(--border)]/30 animate-pulse mb-2" />
+                                    <div className="h-3 w-16 rounded bg-[var(--border)]/30 animate-pulse mx-auto" />
+                                </div>
+                            ))
+                        ) : (
+                            recentChatPeople.map((room) => (
+                                <Link
+                                    key={room.roomId}
+                                    href={`/chat/${room.roomId}`}
+                                    className="w-[108px] flex-shrink-0"
+                                >
+                                    <div className="aspect-square rounded-2xl overflow-hidden shadow-sm border border-[var(--border)] bg-white">
+                                        <img
+                                            src={room.personaImage || "/king.png"}
+                                            alt={room.personaName}
+                                            onError={(e) => { (e.target as HTMLImageElement).src = "/king.png"; }}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    </div>
+                                    <p className="mt-2 text-sm text-center text-[var(--text-primary)] truncate">{room.personaName}</p>
+                                </Link>
+                            ))
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* Recommended Section (Only show on ALL tab and no search) */}
             {currentTab === "ALL" && !search && (
