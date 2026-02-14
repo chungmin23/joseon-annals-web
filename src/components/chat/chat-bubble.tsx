@@ -2,7 +2,6 @@
 
 import { cn } from "@/lib/utils";
 import { Message } from "@/types/chat";
-import Image from "next/image";
 import { Sparkles } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 
@@ -20,11 +19,12 @@ export function TypingIndicator({ profileImageUrl }: { profileImageUrl?: string 
     return (
         <div className="flex w-full mb-6 justify-start">
             <div className="w-10 h-10 rounded-full bg-[var(--bg-secondary)] overflow-hidden mr-3 flex-shrink-0 relative border border-[var(--border)] shadow-sm">
-                {profileImageUrl ? (
-                    <Image src={profileImageUrl} alt="Assistant" fill className="object-cover" />
-                ) : (
-                    <img src="/king.png" alt="Assistant" className="absolute inset-0 w-full h-full object-cover" />
-                )}
+                <img
+                    src={profileImageUrl || "/king.png"}
+                    alt="Assistant"
+                    onError={(e) => { (e.target as HTMLImageElement).src = "/king.png"; }}
+                    className="absolute inset-0 w-full h-full object-cover"
+                />
                 <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-[var(--accent-emerald)] border-2 border-white rounded-full" />
             </div>
             <div className="bg-white border border-[var(--border)] rounded-[20px] rounded-tl-none px-5 py-4 shadow-sm flex items-center gap-1.5">
@@ -78,11 +78,12 @@ export function ChatBubble({ message, profileImageUrl, showRelated, showLoadingR
         <div className={cn("flex w-full mb-6", isUser ? "justify-end" : "justify-start")}>
             {!isUser && (
                 <div className="w-10 h-10 rounded-full bg-[var(--bg-secondary)] overflow-hidden mr-3 flex-shrink-0 relative border border-[var(--border)] shadow-sm">
-                    {profileImageUrl ? (
-                        <Image src={profileImageUrl} alt="Assistant" fill className="object-cover" />
-                    ) : (
-                        <img src="/king.png" alt="Assistant" className="absolute inset-0 w-full h-full object-cover" />
-                    )}
+                    <img
+                        src={profileImageUrl || "/king.png"}
+                        alt="Assistant"
+                        onError={(e) => { (e.target as HTMLImageElement).src = "/king.png"; }}
+                        className="absolute inset-0 w-full h-full object-cover"
+                    />
                     <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-[var(--accent-emerald)] border-2 border-white rounded-full" />
                 </div>
             )}

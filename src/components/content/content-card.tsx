@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { Play, BookOpen, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ContentItem } from "@/types/content";
@@ -21,11 +20,11 @@ export function ContentCard({ content, onSave, isSaved }: ContentCardProps) {
             <div className="relative aspect-video rounded-xl overflow-hidden mb-2 border border-[var(--border)] bg-[var(--bg-secondary)] shadow-sm">
                 {/* Thumbnail */}
                 {content.thumbnailUrl ? (
-                    <Image
+                    <img
                         src={content.thumbnailUrl}
                         alt={content.title}
-                        fill
-                        className="object-cover transition-transform group-hover:scale-105"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                        className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105"
                     />
                 ) : (
                     <div className="absolute inset-0 flex items-center justify-center bg-[var(--border)]/20 text-[var(--text-muted)]">

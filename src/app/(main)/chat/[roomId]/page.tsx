@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -162,11 +161,12 @@ export default function ChatRoomPage() {
                     {currentRoom ? (
                         <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-[var(--bg-secondary)] relative overflow-hidden border border-[var(--border)]">
-                                {currentRoom.personaImage ? (
-                                    <Image src={currentRoom.personaImage} alt={currentRoom.personaName} fill className="object-cover" />
-                                ) : (
-                                    <img src="/king.png" alt={currentRoom.personaName} className="absolute inset-0 w-full h-full object-cover" />
-                                )}
+                                <img
+                                    src={currentRoom.personaImage || "/king.png"}
+                                    alt={currentRoom.personaName}
+                                    onError={(e) => { (e.target as HTMLImageElement).src = "/king.png"; }}
+                                    className="absolute inset-0 w-full h-full object-cover"
+                                />
                                 <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-[var(--accent-emerald)] border-2 border-white rounded-full"></div>
                             </div>
                             <div>

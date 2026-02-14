@@ -68,8 +68,9 @@ async function client<T>(endpoint: string, options: FetchOptions = {}): Promise<
                 }
             }
 
-            // Refresh failed or no refresh token
+            // Refresh failed or no refresh token — clear store AND cookie
             clearAuth();
+            document.cookie = "accessToken=; path=/; max-age=0; SameSite=Strict";
             window.location.href = "/login";
             throw new Error("Session expired");
         }
