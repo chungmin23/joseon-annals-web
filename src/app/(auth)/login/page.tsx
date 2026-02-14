@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect } from "react";
 import { Loader2, ChevronRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -24,9 +24,15 @@ import { useAuthStore } from "@/lib/store/auth-store";
 
 export default function LoginPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const setAuth = useAuthStore((state) => state.setAuth);
     const setOnboarded = useAuthStore((state) => state.setOnboarded);
     const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const msg = searchParams.get("msg");
+        if (msg) setError(decodeURIComponent(msg));
+    }, [searchParams]);
 
     const form = useForm<LoginFormData>({
         resolver: zodResolver(loginSchema),
@@ -152,6 +158,10 @@ export default function LoginPage() {
                 className="w-full h-11 border-[var(--border)] hover:bg-[var(--bg-secondary)] gap-3"
                 onClick={() => {
                     const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+                    if (!clientId) {
+                        setError("Google Client ID is not configured.");
+                        return;
+                    }
                     const redirectUri = encodeURIComponent(`${window.location.origin}/callback/google`);
                     const scope = encodeURIComponent("email profile");
                     window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}`;

@@ -3,13 +3,16 @@ import type { NextRequest } from 'next/server';
 
 export default function proxy(request: NextRequest) {
     const token = request.cookies.get('accessToken')?.value;
+    const pathname = request.nextUrl.pathname;
+    const isOAuthCallback = pathname.startsWith('/callback/');
 
-    const isAuthPage = request.nextUrl.pathname.startsWith('/auth') ||
-        request.nextUrl.pathname === '/login' ||
-        request.nextUrl.pathname === '/signup' ||
-        request.nextUrl.pathname === '/forgot-password';
+    const isAuthPage = pathname.startsWith('/auth') ||
+        pathname === '/login' ||
+        pathname === '/signup' ||
+        pathname === '/forgot-password' ||
+        isOAuthCallback;
 
-    if (!token && !isAuthPage && request.nextUrl.pathname !== '/') {
+    if (!token && !isAuthPage && pathname !== '/') {
         return NextResponse.redirect(new URL('/login', request.url));
     }
 

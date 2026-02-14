@@ -26,7 +26,6 @@ export default function ChatRoomPage() {
     const [isSheetOpen, setIsSheetOpen] = useState(false);
     const [recommendations, setRecommendations] = useState<ContentItem[]>([]);
     const [isWaiting, setIsWaiting] = useState(false);
-    // AI 답변 후 추천 로딩 중 여부 (로딩 점 표시용)
     const [isLoadingRecs, setIsLoadingRecs] = useState(false);
 
     // 이미 타이핑 애니메이션을 완료한 메시지 ID 추적
@@ -86,10 +85,8 @@ export default function ChatRoomPage() {
                 setIsWaiting(false);
                 setIsLoadingRecs(true);
                 prevAssistantCountRef.current = assistantCount;
-                // 추천 콘텐츠 즉시 갱신 (비동기 추천이 아직 안 왔을 수 있으므로)
                 queryClient.invalidateQueries({ queryKey: ['recommendations', roomId] });
-                // 15초 후에도 추천이 없으면 로딩 상태 해제
-                setTimeout(() => setIsLoadingRecs(false), 15000);
+                setTimeout(() => setIsLoadingRecs(false), 10000);
             }
         }
     }, [fetchedMessages]);

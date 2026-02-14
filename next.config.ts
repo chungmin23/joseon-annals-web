@@ -1,8 +1,11 @@
 import type { NextConfig } from "next";
 
-const BACKEND_URL = process.env.API_URL || "http://52.79.244.5:8080";
+const BACKEND_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || "http://52.79.244.5:8080";
 
 const nextConfig: NextConfig = {
+  env: {
+    NEXT_PUBLIC_GOOGLE_CLIENT_ID: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID || "",
+  },
   async rewrites() {
     return [
       {

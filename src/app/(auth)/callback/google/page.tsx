@@ -37,8 +37,9 @@ export default function GoogleCallbackPage() {
                 setOnboarded(true);
                 router.replace("/personas");
             })
-            .catch(() => {
-                router.replace("/login?error=google");
+            .catch((err: any) => {
+                const msg = encodeURIComponent(err?.message || "구글 로그인에 실패했습니다.");
+                router.replace(`/login?error=google&msg=${msg}`);
             });
     }, []);
 
