@@ -17,7 +17,7 @@ export function ContentCard({ content, onSave, isSaved }: ContentCardProps) {
 
     return (
         <div className="flex flex-col w-full group">
-            <div className="relative aspect-video rounded-xl overflow-hidden mb-2 border border-[var(--border)] bg-[var(--bg-secondary)] shadow-sm">
+            <div className="relative aspect-video rounded-xl overflow-hidden mb-2 border border-border bg-bg-secondary shadow-sm">
                 {/* Thumbnail */}
                 {content.thumbnailUrl ? (
                     <img
@@ -27,7 +27,7 @@ export function ContentCard({ content, onSave, isSaved }: ContentCardProps) {
                         className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105"
                     />
                 ) : (
-                    <div className="absolute inset-0 flex items-center justify-center bg-[var(--border)]/20 text-[var(--text-muted)]">
+                    <div className="absolute inset-0 flex items-center justify-center bg-(--border)/20 text-text-muted">
                         {isVideo ? <Play className="w-8 h-8 opacity-20" /> : <BookOpen className="w-8 h-8 opacity-20" />}
                     </div>
                 )}
@@ -35,11 +35,11 @@ export function ContentCard({ content, onSave, isSaved }: ContentCardProps) {
                 {/* Badge */}
                 <div className="absolute top-2 left-2 z-10">
                     {isVideo ? (
-                        <span className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-[var(--accent-red)] text-white shadow-sm">
+                        <span className="px-1.5 py-0.5 text-[10px] font-bold rounded bg-accent-red text-white shadow-sm">
                             VIDEO
                         </span>
                     ) : (
-                        <span className="px-1.5 py-0.5 text-[10px] font-bold rounded border bg-white/90 border-[var(--text-primary)] text-[var(--text-primary)]">
+                        <span className="px-1.5 py-0.5 text-[10px] font-bold rounded border bg-white/90 border-text-primary text-text-primary">
                             BOOK
                         </span>
                     )}
@@ -56,10 +56,10 @@ export function ContentCard({ content, onSave, isSaved }: ContentCardProps) {
 
             {/* Info */}
             <h3 className="text-sm font-bold line-clamp-2 mb-0.5 leading-tight">{content.title}</h3>
-            <p className="text-xs text-[var(--text-secondary)] mb-2 line-clamp-1">{content.description}</p>
+            <p className="text-xs text-text-secondary mb-2 line-clamp-1">{content.description}</p>
 
             {/* Actions */}
-            <div className="mt-auto space-y-2">
+            <div className="mt-auto space-y-3">
                 <Link href={content.linkUrl} target="_blank" rel="noopener noreferrer" className="w-full">
                     <Button
                         variant="default"
@@ -67,8 +67,8 @@ export function ContentCard({ content, onSave, isSaved }: ContentCardProps) {
                         className={cn(
                             "w-full h-8 text-xs font-bold text-white",
                             isVideo
-                                ? "bg-[var(--accent-red)] hover:bg-[var(--accent-red)]/90"
-                                : "bg-[var(--accent-green)] hover:bg-[var(--accent-green)]/90"
+                                ? "bg-accent-red hover:bg-(--accent-red)/90"
+                                : "bg-accent-green hover:bg-(--accent-green)/90"
                         )}
                     >
                         {isVideo ? "YouTube 시청" : "네이버 도서"}
@@ -81,10 +81,10 @@ export function ContentCard({ content, onSave, isSaved }: ContentCardProps) {
                     onClick={() => onSave && !isSaved && onSave(content.contentId)}
                     disabled={isSaved}
                     className={cn(
-                        "w-full h-8 text-xs border-[var(--border)]",
+                        "w-full h-8 text-xs border-border",
                         isSaved
-                            ? "bg-[var(--border)]/20 text-[var(--text-muted)] hover:bg-[var(--border)]/20"
-                            : "text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]"
+                            ? "bg-(--border)/20 text-text-muted hover:bg-(--border)/20"
+                            : "text-text-primary hover:bg-bg-secondary"
                     )}
                 >
                     {isSaved ? (
