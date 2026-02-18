@@ -26,3 +26,13 @@ export const sendMessage = (roomId: string, message: string) => {
         body: JSON.stringify({ message }),
     });
 };
+
+export interface DailyUsage {
+    usedCount: number;
+    limitCount: number;
+    remainingCount: number;
+}
+
+export const getDailyUsage = () => {
+    return client<DailyUsage>("/api/v1/chat/daily-usage");
+};

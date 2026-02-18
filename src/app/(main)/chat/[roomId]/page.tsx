@@ -7,10 +7,11 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { Message } from "@/types/chat";
 import { ContentItem } from "@/types/content";
-import { getMessages, sendMessage, getChatRoom } from "@/lib/api/chat";
+import { getMessages, sendMessage, getChatRoom, getDailyUsage } from "@/lib/api/chat";
 import { getRoomRecommendations } from "@/lib/api/contents";
 import { ChatBubble, TypingIndicator } from "@/components/chat/chat-bubble";
 import { ChatInput } from "@/components/chat/chat-input";
+import { DailyLimitBadge } from "@/components/chat/daily-limit-badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ContentBottomSheet } from "@/components/content/content-bottom-sheet";
 
@@ -27,6 +28,7 @@ export default function ChatRoomPage() {
     const [recommendations, setRecommendations] = useState<ContentItem[]>([]);
     const [isWaiting, setIsWaiting] = useState(false);
     const [isLoadingRecs, setIsLoadingRecs] = useState(false);
+    const [dailyUsedCount, setDailyUsedCount] = useState(0);
 
     // 이미 타이핑 애니메이션을 완료한 메시지 ID 추적
     const typedMessageIds = useRef<Set<string>>(new Set());
@@ -34,6 +36,19 @@ export default function ChatRoomPage() {
     const prevAssistantCountRef = useRef(-1);
     // 추천 폴링 종료 시각 (메시지 전송 후 15초간만 폴링)
     const recsPollUntilRef = useRef<number>(0);
+
+    // 일일 대화 횟수 조회
+    const { data: dailyUsage } = useQuery({
+        queryKey: ['daily-usage'],
+        queryFn: getDailyUsage,
+        staleTime: 0,
+    });
+
+    useEffect(() => {
+        if (dailyUsage) {
+            setDailyUsedCount(dailyUsage.usedCount);
+        }
+    }, [dailyUsage]);
 
     // Fetch specific room to get persona info (flat response from backend)
     const { data: currentRoom } = useQuery({
@@ -121,6 +136,7 @@ export default function ChatRoomPage() {
 
         try {
             await sendMessage(roomId, text);
+            setDailyUsedCount(prev => prev + 1);
         } catch (e) {
             console.error("Failed to send", e);
             setMessages(prev => prev.filter(m => m.messageId !== tempId));
@@ -196,6 +212,9 @@ export default function ChatRoomPage() {
             {/* Messages Area */}
             <div className="flex-1 overflow-y-auto pt-20 pb-24 px-4 scrollbar-hide">
                 <div className="max-w-md mx-auto">
+                    {/* 일일 대화 횟수 배지 */}
+                    <DailyLimitBadge usedCount={dailyUsedCount} />
+
                     {isLoading && !fetchedMessages ? (
                         <div className="space-y-6 pt-4">
                             <div className="flex gap-3">
@@ -265,7 +284,7 @@ export default function ChatRoomPage() {
             </div>
 
             {/* Input */}
-            <ChatInput onSend={handleSend} />
+            <ChatInput onSend={handleSend} disabled={isWaiting || dailyUsedCount >= 10} />
 
             <ContentBottomSheet
                 isOpen={isSheetOpen}
