@@ -1,7 +1,5 @@
 "use client";
 
-const DAILY_LIMIT = 10;
-
 // 엽전(葉錢) SVG: 둥근 동전 + 가운데 사각 구멍
 function EopjeonCoin({ filled }: { filled: boolean }) {
     return (
@@ -51,17 +49,18 @@ function EopjeonCoin({ filled }: { filled: boolean }) {
 
 interface DailyLimitBadgeProps {
     usedCount: number;
+    limitCount: number;
 }
 
-export function DailyLimitBadge({ usedCount }: DailyLimitBadgeProps) {
-    const remaining = Math.max(0, DAILY_LIMIT - usedCount);
+export function DailyLimitBadge({ usedCount, limitCount }: DailyLimitBadgeProps) {
+    const remaining = Math.max(0, limitCount - usedCount);
     const isExhausted = remaining === 0;
 
     return (
         <div className="flex flex-col items-center gap-1.5 py-3">
             {/* 엽전 행 */}
             <div className="flex items-center gap-1">
-                {Array.from({ length: DAILY_LIMIT }, (_, i) => (
+                {Array.from({ length: limitCount }, (_, i) => (
                     <EopjeonCoin key={i} filled={i < usedCount} />
                 ))}
             </div>

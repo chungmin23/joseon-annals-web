@@ -29,6 +29,7 @@ export default function ChatRoomPage() {
     const [isWaiting, setIsWaiting] = useState(false);
     const [isLoadingRecs, setIsLoadingRecs] = useState(false);
     const [dailyUsedCount, setDailyUsedCount] = useState(0);
+    const [dailyLimit, setDailyLimit] = useState(10);
 
     // 이미 타이핑 애니메이션을 완료한 메시지 ID 추적
     const typedMessageIds = useRef<Set<string>>(new Set());
@@ -47,6 +48,7 @@ export default function ChatRoomPage() {
     useEffect(() => {
         if (dailyUsage) {
             setDailyUsedCount(dailyUsage.usedCount);
+            setDailyLimit(dailyUsage.limitCount);
         }
     }, [dailyUsage]);
 
@@ -213,7 +215,7 @@ export default function ChatRoomPage() {
             <div className="flex-1 overflow-y-auto pt-20 pb-24 px-4 scrollbar-hide">
                 <div className="max-w-md mx-auto">
                     {/* 일일 대화 횟수 배지 */}
-                    <DailyLimitBadge usedCount={dailyUsedCount} />
+                    <DailyLimitBadge usedCount={dailyUsedCount} limitCount={dailyLimit} />
 
                     {isLoading && !fetchedMessages ? (
                         <div className="space-y-6 pt-4">
@@ -284,7 +286,12 @@ export default function ChatRoomPage() {
             </div>
 
             {/* Input */}
-            <ChatInput onSend={handleSend} disabled={isWaiting || dailyUsedCount >= 10} />
+            <ChatInput
+                onSend={handleSend}
+                disabled={isWaiting}
+                isExhausted={dailyUsedCount >= dailyLimit}
+                dailyLimit={dailyLimit}
+            />
 
             <ContentBottomSheet
                 isOpen={isSheetOpen}
