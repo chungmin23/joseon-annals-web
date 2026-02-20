@@ -1,6 +1,5 @@
-"use client";
+﻿"use client";
 
-// 엽전(葉錢) SVG: 둥근 동전 + 가운데 사각 구멍
 function EopjeonCoin({ filled }: { filled: boolean }) {
     return (
         <svg
@@ -11,7 +10,6 @@ function EopjeonCoin({ filled }: { filled: boolean }) {
             xmlns="http://www.w3.org/2000/svg"
             aria-hidden="true"
         >
-            {/* 외곽 원 */}
             <circle
                 cx="10"
                 cy="10"
@@ -20,7 +18,6 @@ function EopjeonCoin({ filled }: { filled: boolean }) {
                 stroke={filled ? "#8B6508" : "#C5B58A"}
                 strokeWidth="1.5"
             />
-            {/* 동전 테두리 음각 선 */}
             {filled && (
                 <circle
                     cx="10"
@@ -32,7 +29,6 @@ function EopjeonCoin({ filled }: { filled: boolean }) {
                     opacity="0.5"
                 />
             )}
-            {/* 가운데 사각 구멍 (엽전 특징) */}
             <rect
                 x="7.5"
                 y="7.5"
@@ -57,21 +53,17 @@ export function DailyLimitBadge({ usedCount, limitCount }: DailyLimitBadgeProps)
     const isExhausted = remaining === 0;
 
     return (
-        <div className="flex flex-col items-center gap-1.5 py-3">
-            {/* 엽전 행 */}
-            <div className="flex items-center gap-1">
-                {Array.from({ length: limitCount }, (_, i) => (
-                    <EopjeonCoin key={i} filled={i < usedCount} />
-                ))}
+        <div className="flex w-full items-center justify-center gap-2 py-3">
+            <div className="flex items-center">
+                <EopjeonCoin filled={usedCount > 0} />
             </div>
 
-            {/* 텍스트 */}
             <p
-                className="text-[11px] font-serif"
+                className="text-[11px] font-serif text-center"
                 style={{ color: isExhausted ? "var(--accent-red)" : "var(--text-muted)" }}
             >
                 {isExhausted
-                    ? "오늘의 대화를 모두 사용하였습니다"
+                    ? "오늘의 대화를 모두 사용했습니다."
                     : `오늘의 대화 · ${remaining}회 남음`}
             </p>
         </div>
