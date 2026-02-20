@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/sheet";
 import { LogOut, User as UserIcon, Bell, Shield, HelpCircle, ChevronRight, Lock, Loader2, CheckCircle, Sparkles } from "lucide-react";
 import { logout, changePassword } from "@/lib/api/auth";
-import { getSubscriptionStatus, POLAR_CHECKOUT_URL, SubscriptionStatus } from "@/lib/api/payment";
+import { getSubscriptionStatus, createCheckoutSession, POLAR_CHECKOUT_URL, SubscriptionStatus } from "@/lib/api/payment";
 import { getDailyUsage, DailyUsage } from "@/lib/api/chat";
 
 export default function SettingsPage() {
@@ -32,6 +32,7 @@ export default function SettingsPage() {
 
     const [subscription, setSubscription] = useState<SubscriptionStatus | null>(null);
     const [dailyUsage, setDailyUsage] = useState<DailyUsage | null>(null);
+    const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
 
     useEffect(() => {
         const fetchBillingState = () => {
@@ -186,30 +187,29 @@ export default function SettingsPage() {
                         }}
                     />
                 </div>
-                {!isPro && POLAR_CHECKOUT_URL && (
+                {!isPro && (
                     <Button
-                        onClick={() => {
+                        disabled={isCheckoutLoading}
+                        onClick={async () => {
+                            setIsCheckoutLoading(true);
                             try {
-                                const checkoutUrl = new URL(POLAR_CHECKOUT_URL);
-                                if (user?.userId != null) {
-                                    const userId = String(user.userId);
-                                    checkoutUrl.searchParams.set("metadata[userId]", userId);
-                                    checkoutUrl.searchParams.set("metadata[user_id]", userId);
-                                    checkoutUrl.searchParams.set("external_id", userId);
-                                }
-                                if (user?.email) {
-                                    checkoutUrl.searchParams.set("email", user.email);
-                                    checkoutUrl.searchParams.set("customer_email", user.email);
-                                    checkoutUrl.searchParams.set("customerEmail", user.email);
-                                }
-                                window.open(checkoutUrl.toString(), "_blank");
+                                const { checkoutUrl } = await createCheckoutSession();
+                                window.open(checkoutUrl, "_blank");
                             } catch {
-                                window.open(POLAR_CHECKOUT_URL, "_blank");
+                                if (POLAR_CHECKOUT_URL) {
+                                    window.open(POLAR_CHECKOUT_URL, "_blank");
+                                }
+                            } finally {
+                                setIsCheckoutLoading(false);
                             }
                         }}
                         className="w-full bg-accent-gold hover:bg-(--accent-gold)/90 text-white h-9 text-sm rounded-xl"
                     >
-                        <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                        {isCheckoutLoading ? (
+                            <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                        ) : (
+                            <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                        )}
                         Pro 구독하기 · 하루 100회
                     </Button>
                 )}

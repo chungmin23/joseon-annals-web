@@ -9,5 +9,10 @@ export interface SubscriptionStatus {
 export const getSubscriptionStatus = () =>
     client<SubscriptionStatus>("/api/v1/payments/subscription");
 
+export const createCheckoutSession = () =>
+    client<{ checkoutUrl: string }>("/api/v1/payments/checkout", {
+        method: "POST",
+    });
+
 export const POLAR_CHECKOUT_URL =
     process.env.NEXT_PUBLIC_POLAR_CHECKOUT_URL || "";
