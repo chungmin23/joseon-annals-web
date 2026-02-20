@@ -59,7 +59,8 @@ export default function LoginPage() {
             setAuth(user, accessToken, refreshToken);
 
             // Set cookie for middleware
-            document.cookie = `accessToken=${accessToken}; path=/; max-age=3600; SameSite=Strict`;
+            const secure = window.location.protocol === "https:" ? "; Secure" : "";
+            document.cookie = `accessToken=${accessToken}; path=/; max-age=3600; SameSite=Lax${secure}`;
 
             // Skip onboarding check and go directly to home
             setOnboarded(true); // Temporarily set to true to avoid other checks

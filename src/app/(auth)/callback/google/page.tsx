@@ -33,7 +33,8 @@ export default function GoogleCallbackPage() {
                     accessToken,
                     refreshToken
                 );
-                document.cookie = `accessToken=${accessToken}; path=/; max-age=3600; SameSite=Strict`;
+                const secure = window.location.protocol === "https:" ? "; Secure" : "";
+                document.cookie = `accessToken=${accessToken}; path=/; max-age=3600; SameSite=Lax${secure}`;
                 setOnboarded(true);
                 router.replace("/personas");
             })

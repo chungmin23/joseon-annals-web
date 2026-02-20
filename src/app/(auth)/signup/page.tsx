@@ -58,7 +58,8 @@ export default function SignupPage() {
             setAuth(user, accessToken, refreshToken);
 
             // Set cookie for middleware
-            document.cookie = `accessToken=${accessToken}; path=/; max-age=3600; SameSite=Strict`;
+            const secure = window.location.protocol === "https:" ? "; Secure" : "";
+            document.cookie = `accessToken=${accessToken}; path=/; max-age=3600; SameSite=Lax${secure}`;
 
             // Skip onboarding and go directly to home
             // We might want to set isOnboarded=true in store too if needed, but login handles it.

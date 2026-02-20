@@ -3,7 +3,7 @@
 import { PageHeader } from "@/components/layout/page-header";
 import { useAuthStore } from "@/lib/store/auth-store";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,8 +13,10 @@ import {
     SheetHeader,
     SheetTitle,
 } from "@/components/ui/sheet";
-import { LogOut, User as UserIcon, Bell, Shield, HelpCircle, ChevronRight, Lock, Loader2, CheckCircle } from "lucide-react";
+import { LogOut, User as UserIcon, Bell, Shield, HelpCircle, ChevronRight, Lock, Loader2, CheckCircle, Sparkles } from "lucide-react";
 import { logout, changePassword } from "@/lib/api/auth";
+import { getSubscriptionStatus, POLAR_CHECKOUT_URL, SubscriptionStatus } from "@/lib/api/payment";
+import { getDailyUsage, DailyUsage } from "@/lib/api/chat";
 
 export default function SettingsPage() {
     const router = useRouter();
@@ -27,6 +29,52 @@ export default function SettingsPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
+
+    const [subscription, setSubscription] = useState<SubscriptionStatus | null>(null);
+    const [dailyUsage, setDailyUsage] = useState<DailyUsage | null>(null);
+
+    useEffect(() => {
+        const fetchBillingState = () => {
+            Promise.all([getSubscriptionStatus(), getDailyUsage()])
+                .then(([sub, usage]) => {
+                    setSubscription(sub);
+                    setDailyUsage(usage);
+                })
+                .catch(() => {});
+        };
+
+        fetchBillingState();
+
+        const onFocus = () => fetchBillingState();
+        const onVisibilityChange = () => {
+            if (document.visibilityState === "visible") {
+                fetchBillingState();
+            }
+        };
+
+        window.addEventListener("focus", onFocus);
+        document.addEventListener("visibilitychange", onVisibilityChange);
+
+        return () => {
+            window.removeEventListener("focus", onFocus);
+            document.removeEventListener("visibilitychange", onVisibilityChange);
+        };
+    }, []);
+
+    useEffect(() => {
+        const handleMessage = (e: MessageEvent) => {
+            if (e.data === "payment_success") {
+                Promise.all([getSubscriptionStatus(), getDailyUsage()])
+                    .then(([sub, usage]) => {
+                        setSubscription(sub);
+                        setDailyUsage(usage);
+                    })
+                    .catch(() => {});
+            }
+        };
+        window.addEventListener("message", handleMessage);
+        return () => window.removeEventListener("message", handleMessage);
+    }, []);
 
     const handleLogout = async () => {
         try {
@@ -85,12 +133,17 @@ export default function SettingsPage() {
         { icon: HelpCircle, label: "고객센터", onClick: () => alert("준비 중인 기능입니다.") },
     ];
 
+    const usedCount = dailyUsage?.usedCount ?? 0;
+    const limitCount = dailyUsage?.limitCount ?? (subscription?.dailyLimit ?? 10);
+    const isPro = subscription?.isPro ?? false;
+    const usagePercent = limitCount > 0 ? Math.min(100, (usedCount / limitCount) * 100) : 0;
+
     return (
         <div>
             <PageHeader label="SYSTEM" title="설정" />
 
             {/* Profile Section */}
-            <div className="bg-white rounded-2xl p-6 border border-[var(--border)] mb-6 shadow-sm flex items-center gap-4">
+            <div className="bg-white rounded-2xl p-6 border border-[var(--border)] mb-4 shadow-sm flex items-center gap-4">
                 <div className="w-16 h-16 rounded-full bg-[var(--bg-secondary)] flex items-center justify-center text-[var(--text-muted)] border border-[var(--border)]">
                     <UserIcon className="w-8 h-8 opacity-50" />
                 </div>
@@ -102,6 +155,64 @@ export default function SettingsPage() {
                         {user?.email || "user@example.com"}
                     </p>
                 </div>
+            </div>
+
+            {/* 구독 카드 */}
+            <div className="bg-white rounded-2xl p-5 border border-[var(--border)] mb-4 shadow-sm">
+                <div className="flex items-center justify-between mb-3">
+                    <span className="font-bold text-sm text-text-primary">구독 등급</span>
+                    {isPro ? (
+                        <span className="flex items-center gap-1 px-2.5 py-0.5 bg-accent-gold text-white text-xs rounded-full font-bold">
+                            <Sparkles className="w-3 h-3" />
+                            PRO
+                        </span>
+                    ) : (
+                        <span className="px-2.5 py-0.5 bg-bg-secondary text-text-muted text-xs rounded-full font-medium">
+                            FREE
+                        </span>
+                    )}
+                </div>
+                <p className="text-xs text-text-secondary mb-2">
+                    오늘 <span className="font-semibold text-text-primary">{usedCount}</span> / {limitCount}회 사용
+                </p>
+                <div className="w-full h-1.5 bg-bg-secondary rounded-full mb-3">
+                    <div
+                        className="h-full rounded-full transition-all"
+                        style={{
+                            width: `${usagePercent}%`,
+                            backgroundColor: usagePercent >= 90
+                                ? "var(--accent-red)"
+                                : "var(--accent-gold)",
+                        }}
+                    />
+                </div>
+                {!isPro && POLAR_CHECKOUT_URL && (
+                    <Button
+                        onClick={() => {
+                            try {
+                                const checkoutUrl = new URL(POLAR_CHECKOUT_URL);
+                                if (user?.userId != null) {
+                                    const userId = String(user.userId);
+                                    checkoutUrl.searchParams.set("metadata[userId]", userId);
+                                    checkoutUrl.searchParams.set("metadata[user_id]", userId);
+                                    checkoutUrl.searchParams.set("external_id", userId);
+                                }
+                                if (user?.email) {
+                                    checkoutUrl.searchParams.set("email", user.email);
+                                    checkoutUrl.searchParams.set("customer_email", user.email);
+                                    checkoutUrl.searchParams.set("customerEmail", user.email);
+                                }
+                                window.open(checkoutUrl.toString(), "_blank");
+                            } catch {
+                                window.open(POLAR_CHECKOUT_URL, "_blank");
+                            }
+                        }}
+                        className="w-full bg-accent-gold hover:bg-(--accent-gold)/90 text-white h-9 text-sm rounded-xl"
+                    >
+                        <Sparkles className="w-3.5 h-3.5 mr-1.5" />
+                        Pro 구독하기 · 하루 100회
+                    </Button>
+                )}
             </div>
 
             {/* Menu List */}

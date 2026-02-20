@@ -5,6 +5,7 @@ export default function proxy(request: NextRequest) {
     const token = request.cookies.get('accessToken')?.value;
     const pathname = request.nextUrl.pathname;
     const isOAuthCallback = pathname.startsWith('/callback/');
+    const isPaymentSuccess = pathname === '/payment/success';
 
     const isAuthPage = pathname.startsWith('/auth') ||
         pathname === '/login' ||
@@ -12,7 +13,7 @@ export default function proxy(request: NextRequest) {
         pathname === '/forgot-password' ||
         isOAuthCallback;
 
-    if (!token && !isAuthPage && pathname !== '/') {
+    if (!token && !isAuthPage && !isPaymentSuccess && pathname !== '/') {
         return NextResponse.redirect(new URL('/login', request.url));
     }
 
