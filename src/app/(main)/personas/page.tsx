@@ -172,7 +172,7 @@ export default function PersonasPage() {
             {currentTab === "ALL" && !search && (
                 <div className="mb-8">
                     <div className="flex items-center gap-2 mb-4">
-                        <h2 className="text-lg font-bold font-serif text-[var(--text-primary)]">오늘의 인기 위인</h2>
+                        <h2 className="text-lg font-bold font-serif text-[var(--text-primary)]">오늘의 추천 위인</h2>
                         <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-red)]" />
                     </div>
 
