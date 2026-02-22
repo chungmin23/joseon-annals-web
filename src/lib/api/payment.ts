@@ -4,6 +4,7 @@ export interface SubscriptionStatus {
     tier: string;
     isPro: boolean;
     dailyLimit: number;
+    cancelAtPeriodEnd: boolean;
 }
 
 export const getSubscriptionStatus = () =>

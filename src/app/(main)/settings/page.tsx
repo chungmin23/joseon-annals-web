@@ -138,6 +138,7 @@ export default function SettingsPage() {
     const usedCount = dailyUsage?.usedCount ?? 0;
     const limitCount = dailyUsage?.limitCount ?? (subscription?.dailyLimit ?? 10);
     const isPro = subscription?.isPro ?? false;
+    const cancelAtPeriodEnd = subscription?.cancelAtPeriodEnd ?? false;
     const usagePercent = limitCount > 0 ? Math.min(100, (usedCount / limitCount) * 100) : 0;
 
     return (
@@ -163,16 +164,23 @@ export default function SettingsPage() {
             <div className="bg-white rounded-2xl p-5 border border-[var(--border)] mb-4 shadow-sm">
                 <div className="flex items-center justify-between mb-3">
                     <span className="font-bold text-sm text-text-primary">구독 등급</span>
-                    {isPro ? (
-                        <span className="flex items-center gap-1 px-2.5 py-0.5 bg-accent-gold text-white text-xs rounded-full font-bold">
-                            <Sparkles className="w-3 h-3" />
-                            PRO
-                        </span>
-                    ) : (
-                        <span className="px-2.5 py-0.5 bg-bg-secondary text-text-muted text-xs rounded-full font-medium">
-                            FREE
-                        </span>
-                    )}
+                    <div className="flex items-center gap-1.5">
+                        {isPro ? (
+                            <span className="flex items-center gap-1 px-2.5 py-0.5 bg-accent-gold text-white text-xs rounded-full font-bold">
+                                <Sparkles className="w-3 h-3" />
+                                PRO
+                            </span>
+                        ) : (
+                            <span className="px-2.5 py-0.5 bg-bg-secondary text-text-muted text-xs rounded-full font-medium">
+                                FREE
+                            </span>
+                        )}
+                        {cancelAtPeriodEnd && (
+                            <span className="px-2 py-0.5 bg-(--accent-red)/10 text-accent-red text-[10px] rounded-full font-medium">
+                                취소 예약됨
+                            </span>
+                        )}
+                    </div>
                 </div>
                 <p className="text-xs text-text-secondary mb-2">
                     오늘 <span className="font-semibold text-text-primary">{usedCount}</span> / {limitCount}회 사용
@@ -213,12 +221,16 @@ export default function SettingsPage() {
                         )}
                         Pro 구독하기 · 하루 100회
                     </Button>
+                ) : cancelAtPeriodEnd ? (
+                    <p className="text-xs text-center text-text-muted py-1">
+                        구독이 취소 예약되었습니다. 결제 기간 만료 후 FREE로 전환됩니다.
+                    </p>
                 ) : (
                     <Button
                         disabled={isCancelLoading}
                         variant="outline"
                         onClick={async () => {
-                            if (!confirm("구독을 취소하시겠습니까? 즉시 FREE 등급으로 변경됩니다.")) return;
+                            if (!confirm("구독을 취소하시겠습니까? 현재 결제 기간이 끝난 후 FREE로 전환됩니다.")) return;
                             setIsCancelLoading(true);
                             try {
                                 await cancelSubscription();
