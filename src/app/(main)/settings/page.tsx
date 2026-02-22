@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/sheet";
 import { LogOut, User as UserIcon, Bell, Shield, HelpCircle, ChevronRight, Lock, Loader2, CheckCircle, Sparkles } from "lucide-react";
 import { logout, changePassword } from "@/lib/api/auth";
-import { getSubscriptionStatus, createCheckoutSession, POLAR_CHECKOUT_URL, SubscriptionStatus } from "@/lib/api/payment";
+import { getSubscriptionStatus, createCheckoutSession, cancelSubscription, POLAR_CHECKOUT_URL, SubscriptionStatus } from "@/lib/api/payment";
 import { getDailyUsage, DailyUsage } from "@/lib/api/chat";
 
 export default function SettingsPage() {
@@ -33,6 +33,7 @@ export default function SettingsPage() {
     const [subscription, setSubscription] = useState<SubscriptionStatus | null>(null);
     const [dailyUsage, setDailyUsage] = useState<DailyUsage | null>(null);
     const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
+    const [isCancelLoading, setIsCancelLoading] = useState(false);
 
     useEffect(() => {
         const fetchBillingState = () => {
@@ -187,7 +188,7 @@ export default function SettingsPage() {
                         }}
                     />
                 </div>
-                {!isPro && (
+                {!isPro ? (
                     <Button
                         disabled={isCheckoutLoading}
                         onClick={async () => {
@@ -211,6 +212,31 @@ export default function SettingsPage() {
                             <Sparkles className="w-3.5 h-3.5 mr-1.5" />
                         )}
                         Pro 구독하기 · 하루 100회
+                    </Button>
+                ) : (
+                    <Button
+                        disabled={isCancelLoading}
+                        variant="outline"
+                        onClick={async () => {
+                            if (!confirm("구독을 취소하시겠습니까? 즉시 FREE 등급으로 변경됩니다.")) return;
+                            setIsCancelLoading(true);
+                            try {
+                                await cancelSubscription();
+                                const [sub, usage] = await Promise.all([getSubscriptionStatus(), getDailyUsage()]);
+                                setSubscription(sub);
+                                setDailyUsage(usage);
+                            } catch {
+                                alert("구독 취소에 실패했습니다. 다시 시도해주세요.");
+                            } finally {
+                                setIsCancelLoading(false);
+                            }
+                        }}
+                        className="w-full border-accent-red text-accent-red hover:bg-(--accent-red)/5 h-9 text-sm rounded-xl"
+                    >
+                        {isCancelLoading ? (
+                            <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                        ) : null}
+                        구독 취소
                     </Button>
                 )}
             </div>
