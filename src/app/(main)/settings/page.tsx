@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/sheet";
 import { LogOut, User as UserIcon, Bell, Shield, HelpCircle, ChevronRight, Lock, Loader2, CheckCircle, Sparkles } from "lucide-react";
 import { logout, changePassword } from "@/lib/api/auth";
-import { getSubscriptionStatus, createCheckoutSession, cancelSubscription, POLAR_CHECKOUT_URL, SubscriptionStatus } from "@/lib/api/payment";
+import { getSubscriptionStatus, createCheckoutSession, getCustomerPortalUrl, POLAR_CHECKOUT_URL, SubscriptionStatus } from "@/lib/api/payment";
 import { getDailyUsage, DailyUsage } from "@/lib/api/chat";
 
 export default function SettingsPage() {
@@ -221,24 +221,17 @@ export default function SettingsPage() {
                         )}
                         Pro 구독하기 · 하루 100회
                     </Button>
-                ) : cancelAtPeriodEnd ? (
-                    <p className="text-xs text-center text-text-muted py-1">
-                        구독이 취소 예약되었습니다. 결제 기간 만료 후 FREE로 전환됩니다.
-                    </p>
                 ) : (
                     <Button
                         disabled={isCancelLoading}
                         variant="outline"
                         onClick={async () => {
-                            if (!confirm("구독을 취소하시겠습니까? 현재 결제 기간이 끝난 후 FREE로 전환됩니다.")) return;
                             setIsCancelLoading(true);
                             try {
-                                await cancelSubscription();
-                                const [sub, usage] = await Promise.all([getSubscriptionStatus(), getDailyUsage()]);
-                                setSubscription(sub);
-                                setDailyUsage(usage);
+                                const { checkoutUrl } = await getCustomerPortalUrl();
+                                window.open(checkoutUrl, "_blank");
                             } catch {
-                                alert("구독 취소에 실패했습니다. 다시 시도해주세요.");
+                                alert("구독 관리 페이지를 열 수 없습니다. 다시 시도해주세요.");
                             } finally {
                                 setIsCancelLoading(false);
                             }
@@ -248,7 +241,7 @@ export default function SettingsPage() {
                         {isCancelLoading ? (
                             <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
                         ) : null}
-                        구독 취소
+                        구독 관리 (취소)
                     </Button>
                 )}
             </div>
