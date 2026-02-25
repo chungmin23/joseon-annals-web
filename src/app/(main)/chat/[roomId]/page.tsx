@@ -7,7 +7,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { Message } from "@/types/chat";
 import { ContentItem } from "@/types/content";
-import { getMessages, sendMessage, getChatRoom, getDailyUsage } from "@/lib/api/chat";
+import { getMessages, streamMessage, getChatRoom, getDailyUsage } from "@/lib/api/chat";
 import { getRoomRecommendations } from "@/lib/api/contents";
 import { ChatBubble, TypingIndicator } from "@/components/chat/chat-bubble";
 import { ChatInput } from "@/components/chat/chat-input";
@@ -78,11 +78,11 @@ export default function ChatRoomPage() {
 
     const safeRecommendations = recommendations;
 
-    // AI 응답 대기 중에만 2초마다 폴링, 평상시엔 자동 폴링 없음
+    // 초기 메시지 로드 (폴링 없음 — 스트리밍으로 AI 응답 수신)
     const { data: fetchedMessages, isLoading } = useQuery({
         queryKey: ['messages', roomId],
         queryFn: () => getMessages(roomId),
-        refetchInterval: isWaiting ? 2000 : false,
+        refetchInterval: false,
     });
 
     useEffect(() => {
@@ -125,23 +125,75 @@ export default function ChatRoomPage() {
 
     const handleSend = async (text: string) => {
         const tempId = Date.now().toString();
-        const tempMessage: Message = {
-            messageId: tempId,
-            role: 'USER',
-            content: text,
-            timestamp: Date.now()
-        };
-        setMessages(prev => [...prev, tempMessage]);
+        setMessages(prev => [...prev, {
+            messageId: tempId, role: 'USER', content: text, timestamp: Date.now()
+        }]);
         shouldScrollRef.current = true;
         setIsWaiting(true);
-        recsPollUntilRef.current = Date.now() + 15000; // 15초간 추천 폴링
+        recsPollUntilRef.current = Date.now() + 15000;
+
+        const streamId = `stream-${Date.now()}`;
+        let isFirstToken = true;
+        let buffer = '';
 
         try {
-            await sendMessage(roomId, text);
-            setDailyUsedCount(prev => prev + 1);
+            const response = await streamMessage(roomId, text);
+            if (!response.ok) throw new Error(`Stream failed: ${response.status}`);
+
+            const reader = response.body!.getReader();
+            const decoder = new TextDecoder();
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop() || '';
+
+                for (const line of lines) {
+                    if (!line.startsWith('data:')) continue;
+                    const data = line.slice(5).trim();
+                    if (!data) continue;
+                    try {
+                        const event = JSON.parse(data);
+                        if (event.type === 'token') {
+                            if (isFirstToken) {
+                                isFirstToken = false;
+                                setIsWaiting(false);
+                                typedMessageIds.current.add(streamId);
+                                setMessages(prev => [...prev, {
+                                    messageId: streamId, role: 'ASSISTANT',
+                                    content: event.content, timestamp: Date.now()
+                                }]);
+                            } else {
+                                setMessages(prev => prev.map(m =>
+                                    m.messageId === streamId
+                                        ? { ...m, content: m.content + event.content }
+                                        : m
+                                ));
+                            }
+                            shouldScrollRef.current = true;
+                        } else if (event.type === 'saved') {
+                            setMessages(prev => prev.map(m =>
+                                m.messageId === streamId
+                                    ? { ...m, messageId: event.messageId }
+                                    : m
+                            ));
+                            typedMessageIds.current.delete(streamId);
+                            typedMessageIds.current.add(event.messageId);
+                            prevAssistantCountRef.current += 1;
+                            setDailyUsedCount(prev => prev + 1);
+                            setIsLoadingRecs(true);
+                            queryClient.invalidateQueries({ queryKey: ['recommendations', roomId] });
+                            setTimeout(() => setIsLoadingRecs(false), 10000);
+                        }
+                    } catch (_) { /* ignore parse errors */ }
+                }
+            }
         } catch (e) {
-            console.error("Failed to send", e);
-            setMessages(prev => prev.filter(m => m.messageId !== tempId));
+            console.error("Stream failed:", e);
+            setMessages(prev => prev.filter(m => m.messageId !== streamId && m.messageId !== tempId));
             setIsWaiting(false);
         }
     };

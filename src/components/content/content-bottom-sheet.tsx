@@ -6,6 +6,7 @@ import { Sheet, SheetContent, SheetTitle, SheetClose } from "@/components/ui/she
 import { ContentCard } from "./content-card";
 import { ContentItem } from "@/types/content";
 import { saveToLibrary } from "@/lib/api/contents";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface ContentBottomSheetProps {
     isOpen: boolean;
@@ -16,11 +17,13 @@ interface ContentBottomSheetProps {
 export function ContentBottomSheet({ isOpen, onClose, recommendations }: ContentBottomSheetProps) {
     const [savedIds, setSavedIds] = useState<Set<number>>(new Set());
     const [toastVisible, setToastVisible] = useState(false);
+    const queryClient = useQueryClient();
 
     const handleSave = async (id: number) => {
         try {
             await saveToLibrary(id.toString());
             setSavedIds(prev => new Set(prev).add(id));
+            queryClient.invalidateQueries({ queryKey: ['library'] });
             setToastVisible(true);
             setTimeout(() => setToastVisible(false), 2500);
         } catch (e) {

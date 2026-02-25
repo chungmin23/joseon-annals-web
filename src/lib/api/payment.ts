@@ -15,8 +15,8 @@ export const createCheckoutSession = () =>
         method: "POST",
     });
 
-export const cancelSubscription = () =>
-    client<void>("/api/v1/payments/subscription", { method: "DELETE" });
+export const getCustomerPortalUrl = () =>
+    client<{ checkoutUrl: string }>("/api/v1/payments/subscription/portal");
 
 export const POLAR_CHECKOUT_URL =
     process.env.NEXT_PUBLIC_POLAR_CHECKOUT_URL || "";
