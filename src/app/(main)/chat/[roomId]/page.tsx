@@ -320,7 +320,6 @@ export default function ChatRoomPage() {
                                                 showLoadingRecs={isLoadingRecs && safeRecommendations.length === 0 && msg.role.toUpperCase() === 'ASSISTANT' && index === lastAssistantIndex}
                                                 onRelatedClick={() => setIsSheetOpen(true)}
                                                 isNew={isNewMsg}
-                                                onTypingComplete={() => typedMessageIds.current.add(msg.messageId)}
                                             />
                                         </div>
                                     );

@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils";
 import { Message } from "@/types/chat";
 import { Sparkles } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 
 interface ChatBubbleProps {
     message: Message;
@@ -12,7 +12,6 @@ interface ChatBubbleProps {
     showLoadingRecs?: boolean;
     onRelatedClick?: () => void;
     isNew?: boolean;
-    onTypingComplete?: () => void;
 }
 
 export function TypingIndicator({ profileImageUrl }: { profileImageUrl?: string }) {
@@ -36,35 +35,18 @@ export function TypingIndicator({ profileImageUrl }: { profileImageUrl?: string 
     );
 }
 
-export function ChatBubble({ message, profileImageUrl, showRelated, showLoadingRecs, onRelatedClick, isNew, onTypingComplete }: ChatBubbleProps) {
+export function ChatBubble({ message, profileImageUrl, showRelated, showLoadingRecs, onRelatedClick, isNew }: ChatBubbleProps) {
     const isUser = message.role?.toUpperCase() === 'USER';
     const shouldAnimate = isNew && !isUser;
 
     const [displayedContent, setDisplayedContent] = useState(shouldAnimate ? '' : message.content);
-    const doneRef = useRef(!shouldAnimate);
 
     useEffect(() => {
-        if (!shouldAnimate || doneRef.current) return;
+        // Keep bubble text synced to streamed content updates.
+        setDisplayedContent(message.content);
+    }, [message.content]);
 
-        const fullText = message.content;
-        const charsPerTick = Math.max(1, Math.ceil(fullText.length / 150));
-        let index = 0;
-
-        const timer = setInterval(() => {
-            index += charsPerTick;
-            setDisplayedContent(fullText.slice(0, index));
-            if (index >= fullText.length) {
-                setDisplayedContent(fullText);
-                clearInterval(timer);
-                doneRef.current = true;
-                onTypingComplete?.();
-            }
-        }, 15);
-
-        return () => clearInterval(timer);
-    }, []);
-
-    const isTyping = shouldAnimate && displayedContent.length < message.content.length;
+    const isTyping = shouldAnimate;
 
     const date = new Date(message.timestamp);
     const isValidDate = !isNaN(date.getTime());
